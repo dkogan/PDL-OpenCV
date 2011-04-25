@@ -373,11 +373,11 @@ EOD
         # value, it comes first
 
         # first, construct opencv matrices for all the arguments that need this
-        foreach my $pdltype qw(B,S,U,L,F,D)
+        foreach my $pdltype qw(B S U L F D)
         {
           my $cvtype = $PDL_CV_typemapping{$pdltype};
 
-          $code .= 'types(F) %{' . "\n";
+          $code .= "types($pdltype) \%{\n";
           foreach my $arg (@$args)
           {
             if ( $arg->{type} =~ /CvMat|CvArr/ )
