@@ -32,11 +32,12 @@ PDL::OpenCV - PDL interface to OpenCV
 
 =head1 SYNOPSIS
 
+ use PDL;
  use PDL::OpenCV;
 
  my $a = random(3,3);
  my $b = random(3,3);
- my $c = Add($a, $b);
+ Add($a, $b, my $c = $b->copy, null);
 
 =head1 DESCRIPTION
 
