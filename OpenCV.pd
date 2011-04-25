@@ -46,24 +46,19 @@ C-interface
 
 EOD
 
-#my @headers = map {"/usr/include/opencv/$_"} qw(cv.h);
-my @headers = qw(cv.h);
-
-# cxcore.h
-# cvcompat.h
-# cvinternal.h
-# cvtypes.h
-# cvver.h
-# cvvidsurv.hpp
-# cvwimage.h
-# cxcore.hpp
-# cxerror.h
-# cxflann.h
-# cxmat.hpp
-# cxmisc.h
-# cxoperations.hpp
-# cxtypes.h
-# ml.h
+my @headers = map {"/usr/include/opencv/$_"}
+  qw(cv.h
+     cxcore.h
+     cvcompat.h
+     cvinternal.h
+     cvtypes.h
+     cvver.h
+     cvwimage.h
+     cxerror.h
+     cxflann.h
+     cxmisc.h
+     cxtypes.h
+     ml.h);
 
 
 
