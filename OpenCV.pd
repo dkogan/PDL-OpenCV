@@ -4,6 +4,13 @@ our $VERSION = 0.01;
 use PDL::Exporter;
 use Regexp::Common;
 
+my %PDL_CV_typemapping =
+  ( B => 'CV_8UC1',
+    S => 'CV_16SC1',
+    U => 'CV_16UC1',
+    L => 'CV_32SC1',
+    F => 'CV_32FC1',
+    D => 'CV_64FC1' );
 
 pp_setversion($VERSION);
 
@@ -112,7 +119,7 @@ sub importHeader
       pp_def($rootname,
              HandleBad    => 0,
              Pars         => $pars,
-             GenericTypes => [F,D],
+             GenericTypes => [B,S,U,L,F,D],
              Code         => $code,
              Doc          => $docs);
 
@@ -371,15 +378,22 @@ EOD
         # value, it comes first
 
         # first, construct opencv matrices for all the arguments that need this
-        foreach my $arg (@$args)
+        foreach my $pdltype qw(B,S,U,L,F,D)
         {
-          if( $arg->{type} =~ /CvMat|CvArr/ )
+          my $cvtype = $PDL_CV_typemapping{$pdltype};
+
+          $code .= 'types(F) %{' . "\n";
+          foreach my $arg (@$args)
           {
-            my $argname = $arg->{name};
-            $code .=
-              "CvMat ${argname}_cv = cvMat(\$SIZE($arg->{dims}[1]), \$SIZE($arg->{dims}[0]), " .
-              "CV_32FC1, \$P($argname));\n";
+            if ( $arg->{type} =~ /CvMat|CvArr/ )
+            {
+              my $argname = $arg->{name};
+              $code .=
+                "CvMat ${argname}_cv = cvMat(\$SIZE($arg->{dims}[1]), \$SIZE($arg->{dims}[0]), " .
+                  "$cvtype, \$P($argname));\n";
+            }
           }
+          $code .= '%}' . "\n";
         }
 
         # now construct the function call
