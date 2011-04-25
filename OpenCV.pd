@@ -392,19 +392,20 @@ EOD
         }
 
         # now construct the function call
-        $code .= "$funcname( ";
-
         my @argstrs;
         my $arg0;
         if( $args->[0]{name} eq '_return' )
         {
           $arg0 = 1;
-          $code = "*($args->[0]{type} *)\$P($args->[0]{name}) = $code";
+          $code .= "*($args->[0]{type} *)\$P($args->[0]{name}) = ";
         }
         else
         {
           $arg0 = 0;
         }
+
+
+        $code .= "$funcname( ";
 
         foreach my $arg (@{$args}[$arg0..$#$args])
         {
