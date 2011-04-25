@@ -1,0 +1,12 @@
+This is an early prototype of PDL bindings to OpenCV. All bindings are
+auto-generated from OpenCV headers. Any OpenCV function that doesn't take as its
+arguments ONLY matrices or scalars is not yet bound. Since everything is
+auto-generated, all piddles have to have the correct sizes before calling the
+OpenCV routines. THIS INCLUDES OUTPUTS. This requirement makes any useful PDL
+threading impossible. Further, at this point ALL arguments must be
+supplied. PDL::null can be used for empty piddles.
+
+
+So far this has ONLY been tested on amd64 machines running Debian
+GNU/Linux. This is significant because the parsed OpenCV headers came from the
+Debian libcv-dev package.
