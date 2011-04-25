@@ -1,0 +1,420 @@
+#  -*- cperl -*-
+
+our $VERSION = 0.01;
+use PDL::Exporter;
+use Regexp::Common;
+
+
+pp_setversion($VERSION);
+
+
+pp_addhdr('
+#include <opencv/cv.h>
+#include <stdio.h>
+');
+
+pp_addpm( {At=>'Top'}, <<'EOD');
+
+use strict;
+use warnings;
+
+
+=head1 PDL::OpencV
+
+PDL::OpenCV - PDL interface to OpenCV
+
+=head1 SYNOPSIS
+
+ use PDL::OpenCV;
+
+ my $a = random(3,3);
+ my $b = random(3,3);
+ my $c = Add($a, $b);
+
+=head1 DESCRIPTION
+
+This is a PDL interface to OpenCV. All the API functions are auto-generated form
+the OpenCV headers. The function names and arguments match the OpenCV
+C-interface
+
+EOD
+
+#my @headers = map {"/usr/include/opencv/$_"} qw(cv.h);
+my @headers = qw(cv.h);
+
+# cxcore.h
+# cvcompat.h
+# cvinternal.h
+# cvtypes.h
+# cvver.h
+# cvvidsurv.hpp
+# cvwimage.h
+# cxcore.hpp
+# cxerror.h
+# cxflann.h
+# cxmat.hpp
+# cxmisc.h
+# cxoperations.hpp
+# cxtypes.h
+# ml.h
+
+
+
+foreach my $header (@headers)
+{ importHeader($header); }
+
+pp_done();
+
+
+
+sub importHeader
+{
+  my $header = shift;
+  parseHeader($header);
+
+  sub parseHeader
+  {
+    my $file = shift;
+    open HEADER, "<$file" or die "Couldn't open header $file";
+    local $/ = undef;
+    my $header = <HEADER>; # slurp in the file
+    close HEADER;
+
+    $header =~ s/\r//g;     # strip all CRs
+    $header =~ s/\t/ /g;    # tabs to spaces
+    $header =~ s/\\\n/ /mg; # convert all escaped newlines to spaces. This allows simple #define handling
+
+    my $defines = parseDefines(\$header);
+
+    my $apire = qr{ \s*CVAPI\s*
+                    \(\s*(.*?)\s*\)       # return type as CVAPI(type)
+                    \s*([a-zA-Z0-9_]*)    # function name
+                    \s*\((.*?)\)\s*; }xs; # argument list;
+
+    while($header =~ /$apire/g)
+    {
+      my $return  = $1;
+      my $name    = $2;
+      my $argstr  = $3;
+
+      if($name !~ /^cv(.*)/)
+      {
+        say STDERR "API function $name doesn't start with 'cv'. Skipping";
+        next;
+      }
+      my $rootname = $1;
+
+      my $docs = makeDocs ($return, $name, $argstr);
+      my $args = parseArgs($return, $name, $argstr) or next;
+      my $code = makeCode ($args, $name);
+      my $pars = join(';', map {$_->{parstring}} @$args);
+
+      pp_def($rootname,
+             HandleBad    => 0,
+             Pars         => $pars,
+             GenericTypes => [F,D],
+             Code         => $code,
+             Doc          => $docs);
+
+      sub parseDefines
+      {
+        my $header = shift;
+
+        my %defines;
+        while($$header =~ /^\s*# *define +(\S+) +(.*)$/mg)
+        {
+          if(exists $defines{$1})
+          { say STDERR "$1 already defined.. Using older value"; }
+          else
+          { $defines{$1} = $2; }
+        }
+
+        return \%defines;
+      }
+
+      sub makeDocs
+      {
+        my ($return, $name, $argstr) = @_;
+
+        my $docs = <<EOD;
+=for ref
+
+ $return $name( $argstr );
+
+EOD
+        return $docs;
+      }
+
+      sub parseArgs
+      {
+        my ($return, $name, $argstr) = @_;
+
+        # I want to split the argument list on commas, but I need to ignore the commas inside sets
+        # of nested parentheses
+
+        my @args = $argstr =~
+          / ( (?:
+                [^(,]+                             # no parens or commas
+                (?:$RE{balanced}{-parens=>'()'})?  # unless they're in a nested set
+                [^(,]* )+? )                       # and followed by more no-parens, no-commas
+            [,]?/gx;                               # end in a comma (or not, if it's the end)
+        @args = grep /./, @args;
+
+        foreach my $arg (@args)
+        { $arg = parseArg($arg, $name) or return undef; }
+
+        $return = parseArg($return, $name, 1) or return undef;
+
+        # returned value is the first output, unless there is none
+        unless( $return->{explicit_type} eq 'void' )
+        {
+          unshift @args, $return;
+        }
+
+        return \@args;
+
+
+
+        sub parseArg
+        {
+          my $argstr   = shift;
+          my $funcname = shift;
+          my $isreturn = shift;
+
+          my %arg;
+
+          # get rid of newlines and leading/trailing whitespace
+          $argstr =~ s/\n/ /g;
+          $argstr =~ s/^ *//g;
+          $argstr =~ s/ *$//g;
+
+          # read const-ness
+          if($argstr =~ /^\s*const\s*/gc)
+          { $arg{const} = 1; }
+
+          # get the type. IT's a word with maybe some '*'
+          $argstr =~ /\G\s*([0-9A-Za-z_]+[\s*]*)/gc;
+          unless( $arg{type} = $1 )
+          {
+            say STDERR "Can't parse argument type of '$argstr'";
+            return undef;
+          }
+
+          if(! $isreturn)
+          {
+            # get the argument name
+            $argstr =~ /\G([A-Za-z0-9_]+)\s*/gc;
+            unless( $arg{name} = $1 )
+            {
+              say STDERR "Can't parse argument name of '$argstr'";
+              return undef;
+            }
+            # get the qualifiers, if any
+            $argstr =~ /\G(.*?)\s*$/gc;
+            $arg{qualifiers} = $1;
+          }
+          else
+          {
+            $arg{name} = '_return';
+          }
+
+          # I can now interpret the string
+          interpretArg(\%arg, $argstr, $isreturn) or return undef;
+          makeParString(\%arg) or return undef;
+          return \%arg;
+
+
+
+
+          sub interpretArg
+          {
+            my ($arg, $argstr, $isreturn) = @_;
+
+            # count up the pointers in the type
+            my $pointercount = 0;
+            while ($arg->{type} =~ /\*/g)
+            { $pointercount++; }
+            $arg->{type} =~ s/\*/ /g;
+
+            # remove leading/trailing whitespace from the type
+            $arg->{type} =~ s/^\s+//g;
+            $arg->{type} =~ s/\s+$//g;
+
+            if ($pointercount > 1)
+            {
+              say STDERR "I can parse at most single pointers: '$argstr'";
+              return undef;
+            }
+
+            if ( $arg->{type} =~ /CvMat|CvArr/ )
+            {
+              if( $pointercount < 1)
+              {
+                say STDERR "Don't know what to do with non-pointer CvMat/CvArr: '$argstr'";
+                return undef;
+              }
+
+              if( $isreturn )
+              {
+                say STDERR "Don't know how to return matrices: '$argstr'";
+                return undef;
+              }
+
+              $arg->{explicit_type} = '';
+              $arg->{input}  = 1;
+              $arg->{output} = 1 unless $arg->{const};
+
+              # dimensions are assumed 2D for opencv matrices
+              # PP complains if the dim name has _ in it
+              my $dimno_ = $arg->{name};
+              $dimno_ =~ s/_//g; 
+
+              $arg->{dims} = [map {"$dimno_$_"} 0..1];
+            }
+            else
+            {
+              if ($pointercount > 0)
+              {
+                say STDERR "Don't know what to do with a pointer to NOT a CvMat/CvArr: '$argstr'";
+                return undef;
+              }
+
+              $arg->{input}  = 1;
+              $arg->{output} = 1 if( $pointercount > 0 && !$arg->{const} );
+
+              if ( $arg->{type} =~ /^(?:double|float|int)$/)
+              {
+                $arg->{explicit_type} = $arg->{type};
+                $arg->{dims}          = [1]; # this is one-dimensional and that dimension has length 1
+              }
+
+              # most of these are from cxtypes.h. I can parse that too, but it's
+              # unlikely to change
+              elsif ( $arg->{type} =~ /^Cv(?:Point|Size)$/ )
+              {
+                $arg->{explicit_type}   = 'int';
+                $arg->{dims} = [2]; # 1D, len 2
+              }
+              elsif ( $arg->{type} =~ /^Cv(?:Point|Size)(.)D(..)f$/ )
+              {
+                if ($2 !~ /32|64/)
+                {
+                  say STDERR "I can only parse 32-bit and 64-bit floats: '$argstr'";
+                  return undef;
+                }
+
+                $arg->{explicit_type} = $2 eq '32' ? 'float' : 'double';
+                $arg->{dims} = [$1]; # 1D
+              }
+              elsif ( $arg->{type} =~ /^CvScalar$/ )
+              {
+                $arg->{explicit_type}   = 'double';
+                $arg->{dims} = [4]; # 1D, len 4
+              }
+              elsif ($arg->{type} =~ /^void$/ && $isreturn )
+              {
+                $arg->{explicit_type}   = 'void';
+                $arg->{dims} = [1];
+              }
+              else
+              {
+                say STDERR "Type of '$argstr' not yet supported";
+                return undef;
+              }
+            }
+
+            if ($isreturn)
+            {
+              $arg->{input}  = 0;
+              $arg->{output} = 1;
+            }
+
+            return 1;
+          }
+
+          sub makeParString
+          {
+            my $arg = shift;
+
+            my $str = '';
+
+            if($arg->{explicit_type} )
+            { $str .= "$arg->{explicit_type} "; }
+
+            if($arg->{output} )
+            {
+              if($arg->{input}) { $str .= '[io]'; }
+              else              { $str .= '[o]'; }
+            }
+
+            $str .= $arg->{name};
+            $str .= '(';
+            $str .= join(',', @{$arg->{dims}});
+            $str .= ')';
+
+            $arg->{parstring} = $str;
+
+            return 1;
+          }
+        }
+      }
+
+      sub makeCode
+      {
+        my $args     = shift;
+        my $funcname = shift;
+
+        my $code = '';
+
+        # each argument needs to be tied to opencv. After that is done, we can call the opencv
+        # routine itself. The order of the arguments is as specified in @$args. If there is a return
+        # value, it comes first
+
+        # first, construct opencv matrices for all the arguments that need this
+        foreach my $arg (@$args)
+        {
+          if( $arg->{type} =~ /CvMat|CvArr/ )
+          {
+            my $argname = $arg->{name};
+            $code .=
+              "CvMat ${argname}_cv = cvMat(\$SIZE($arg->{dims}[1]), \$SIZE($arg->{dims}[0]), " .
+              "CV_32FC1, \$P($argname));\n";
+          }
+        }
+
+        # now construct the function call
+        $code .= "$funcname( ";
+
+        my @argstrs;
+        my $arg0;
+        if( $args->[0]{name} eq '_return' )
+        {
+          $arg0 = 1;
+          $code = "*($args->[0]{type} *)\$P($args->[0]{name}) = $code";
+        }
+        else
+        {
+          $arg0 = 0;
+        }
+
+        foreach my $arg (@{$args}[$arg0..$#$args])
+        {
+          my $argname = $arg->{name};
+
+          if( $arg->{type} =~ /CvMat|CvArr/ )
+          {
+            push @argstrs, "&${argname}_cv";
+          }
+          else
+          {
+            push @argstrs, "*($arg->{type} *)\$P($argname)";
+          }
+        }
+
+        $code .= join(', ', @argstrs) . ");\n";
+
+        return $code;
+      }
+    }
+  }
+}
