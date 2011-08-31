@@ -1,7 +1,7 @@
 Source: libpdl-opencv-perl
 Section: perl
 Priority: optional
-Build-Depends: debhelper (>= 7), libcv-dev, libregexp-common-perl
+Build-Depends: debhelper (>= 7), libcv-dev, libregexp-common-perl, pdl
 Build-Depends-Indep: perl
 Maintainer: Dima Kogan <dkogan@cds.caltech.edu>
 Standards-Version: 3.9.1
