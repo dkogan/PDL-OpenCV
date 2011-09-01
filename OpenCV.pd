@@ -64,7 +64,11 @@ my @headers = map {"/usr/include/opencv/$_"}
 
 
 foreach my $header (@headers)
-{ importHeader($header); }
+{
+  next unless -e $header;
+
+  importHeader($header);
+}
 
 pp_done();
 
