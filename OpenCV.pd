@@ -47,21 +47,7 @@ C-interface
 
 EOD
 
-my @headers = map {"/usr/include/opencv/$_"}
-  qw(cv.h
-     cxcore.h
-     cvcompat.h
-     cvinternal.h
-     cvtypes.h
-     cvver.h
-     cvwimage.h
-     cxerror.h
-     cxflann.h
-     cxmisc.h
-     cxtypes.h
-     ml.h);
-
-
+my @headers = split /\s+/, `find /usr/include/opencv* -name \*.h`;
 
 foreach my $header (@headers)
 {
