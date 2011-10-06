@@ -63,6 +63,8 @@ pp_done();
 sub importHeader
 {
   my $header = shift;
+  print STDERR "importing header $header\n";
+
   parseHeader($header);
 
   sub parseHeader
