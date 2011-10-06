@@ -8,7 +8,7 @@ my %descriptor = pdlpp_stdargs(\@package);
 
 $descriptor{VERSION}   = 0.01;
 $descriptor{OPTIMIZE}  = '-O3',
-push @{$descriptor{LIBS}}, '-lcv';
+push @{$descriptor{LIBS}}, `pkg-config --libs opencv`;
 
 WriteMakefile( %descriptor );
 
