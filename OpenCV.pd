@@ -47,7 +47,7 @@ C-interface
 
 EOD
 
-my @headers = split /\s+/, `find /usr/include/opencv* -name \*.h`;
+my @headers = split /\s+/, `find /usr/include/opencv*`;
 
 foreach my $header (@headers)
 {
