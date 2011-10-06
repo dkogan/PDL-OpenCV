@@ -394,6 +394,12 @@ EOC
         }
 
         # now construct the function call
+        if(! @$args)
+        {
+          $code .= "$funcname();\n ";
+          return $code;
+        }
+
         my @argstrs;
         my $arg0;
         if( $args->[0]{name} eq '_return' )
