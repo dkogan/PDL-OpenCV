@@ -26,7 +26,7 @@ use strict;
 use warnings;
 
 
-=head1 PDL::OpenCV
+=head1 NAME
 
 PDL::OpenCV - PDL interface to OpenCV
 
