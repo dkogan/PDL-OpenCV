@@ -6,7 +6,7 @@ use PDL::Core::Dev;
 my @package = qw(OpenCV.pd OpenCV PDL::OpenCV);
 my %descriptor = pdlpp_stdargs(\@package);
 
-$descriptor{VERSION}   = 0.01;
+$descriptor{VERSION_FROM}   = 'OpenCV.pd';
 $descriptor{OPTIMIZE}  = '-O3',
 push @{$descriptor{LIBS}}, `pkg-config --libs opencv`;
 
