@@ -1,3 +1,12 @@
+libpdl-opencv-perl (0.03) unstable; urgency=low
+
+  * no longer distributing binary package
+  * the main package is no longer marked system-independent
+  * minor POD tweak
+  * I now read the VERSION from the main source instead of hardcoding it
+
+ -- Dima Kogan <dima@secretsauce.net>  Tue, 29 Nov 2011 14:16:41 -0800
+
 libpdl-opencv-perl (0.02) unstable; urgency=low
 
   * packaging cleanup
