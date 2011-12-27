@@ -1,3 +1,10 @@
+libpdl-opencv-perl (0.04) unstable; urgency=low
+
+  * I now export all the OpenCV #defines
+  * improved main POD
+
+ -- Dima Kogan <dima@secretsauce.net>  Tue, 27 Dec 2011 14:23:49 -0800
+
 libpdl-opencv-perl (0.03) unstable; urgency=low
 
   * no longer distributing binary package
