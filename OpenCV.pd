@@ -3,6 +3,7 @@
 our $VERSION = 0.03;
 use PDL::Exporter;
 use Regexp::Common;
+use Data::Dumper;
 
 my %PDL_CV_typemapping =
   ( B => 'CV_8UC1',
@@ -48,13 +49,21 @@ C-interface
 EOD
 
 my @headers = split /\s+/, `find /usr/include/opencv*`;
-
+my %cvdef; # all defines
 foreach my $header (@headers)
 {
   next unless -e $header;
 
   importHeader($header);
 }
+
+if( %cvdef )
+{
+  $Data::Dumper::Terse = 1;
+  pp_addpm('our %cvdef = %{ ' . Dumper(\%cvdef) . '};');
+  pp_add_exported('%cvdef');
+}
+
 
 pp_done();
 
@@ -79,7 +88,7 @@ sub importHeader
     $header =~ s/\t/ /g;    # tabs to spaces
     $header =~ s/\\\n/ /mg; # convert all escaped newlines to spaces. This allows simple #define handling
 
-    my $defines = parseDefines(\$header);
+    %cvdef = ( %cvdef, %{ parseDefines(\$header) } );
 
     my $apire = qr{ \s*CVAPI\s*
                     \(\s*(.*?)\s*\)       # return type as CVAPI(type)
