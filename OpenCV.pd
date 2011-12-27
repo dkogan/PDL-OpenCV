@@ -34,17 +34,34 @@ PDL::OpenCV - PDL interface to OpenCV
 =head1 SYNOPSIS
 
  use PDL;
- use PDL::OpenCV;
+ use PDL::NiceSlice;
+ use PDL::OpenCV qw(%cvdef Add Cmp);
 
- my $a = random(3,3);
- my $b = random(3,3);
- Add($a, $b, my $c = $b->copy, null);
+ my $a = sequence(3,3)->byte;
+ my $b = $a->copy->byte;
+ $b(0,0) .= 5;
+
+ Add( $a, $b, my $c = $b->zeros, null);
+ Cmp( $a, $b, my $d = $b->zeros, $cvdef{CV_CMP_EQ} );
 
 =head1 DESCRIPTION
 
 This is a PDL interface to OpenCV. All the API functions are auto-generated form
 the OpenCV headers. The function names and arguments match the OpenCV
-C-interface
+C-interface. Arguments are passed I<exactly> like in the C interface: all the
+arguments are requires, inputs and output both need to be passed in as
+arguments, C<null> should be passed in place of C<NULL>, etc. All C<#define>
+constants are available in the C<%cvdef> hash.
+
+=head2 CAVEATS
+
+All output piddles I<must> be passed in preallocated, with the correct dimensions.
+
+All piddles passed into any function I<must> have the same type.
+
+Only functions that take in matrix or scalar arguments are supported: anything
+using custom OpenCV structures is I<not> supported.
+
 
 EOD
 
