@@ -1,3 +1,9 @@
+libpdl-opencv-perl (0.05) unstable; urgency=low
+
+  * now depending on version of PDL I built the package with
+
+ -- Dima Kogan <dima@secretsauce.net>  Fri, 03 Feb 2012 21:22:00 -0800
+
 libpdl-opencv-perl (0.04) unstable; urgency=low
 
   * I now export all the OpenCV #defines
