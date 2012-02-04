@@ -1,13 +1,13 @@
 Source: libpdl-opencv-perl
 Section: perl
 Priority: optional
-Build-Depends: debhelper (>= 7), libcv-dev, libregexp-common-perl, pdl, perl
+Build-Depends: debhelper (>= 7.0.50~), libcv-dev, libregexp-common-perl, pdl, perl
 Maintainer: Dima Kogan <dima@secretsauce.net>
 Standards-Version: 3.9.1
 
 Package: libpdl-opencv-perl
 Architecture: amd64
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}, pdl, libregexp-common-perl
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}, pdl (= ${pdl:Version}), libregexp-common-perl
 Description: PDL interface to OpenCV
  PDL::OpenCV is an interface module to allow OpenCV functions to be called from
  PDL

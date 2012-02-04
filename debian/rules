@@ -2,3 +2,6 @@
 
 %:
 	dh $@
+
+override_dh_gencontrol:
+	dh_gencontrol -- -V`dpkg-query -W -f='pdl:Version=$${Version}' pdl`
