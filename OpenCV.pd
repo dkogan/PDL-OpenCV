@@ -407,8 +407,8 @@ EOD
                 CvMat* _p_${argname}_cv;
                 if(\$SIZE($arg->{dims}[0]) > 0)
                 {
-                  CvMat ${argname}_cv = cvMat(\$SIZE($arg->{dims}[1]), \$SIZE($arg->{dims}[0]),
-                                              $cvtype, \$P($argname));
+                  ${argname}_cv = cvMat(\$SIZE($arg->{dims}[1]), \$SIZE($arg->{dims}[0]),
+                                        $cvtype, \$P($argname));
                   _p_${argname}_cv = &${argname}_cv;
                 }
                 else
