@@ -1,6 +1,6 @@
 #  -*- cperl -*-
 
-our $VERSION = 0.04;
+our $VERSION = 0.06;
 use PDL::Exporter;
 use Regexp::Common;
 use Data::Dumper;
