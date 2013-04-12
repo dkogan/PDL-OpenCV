@@ -71,6 +71,29 @@ using custom OpenCV structures is I<not> supported.
 
 EOD
 
+pp_addpm( {At=>'Bot'}, <<'EOD');
+=head1 REPOSITORY
+
+L<https://github.com/dkogan/PDL-OpenCV>
+
+=head1 AUTHOR
+
+Dima Kogan, C<< <dima@secretsauce.net> >>
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011-2012 Dima Kogan.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
+EOD
+
+
 my @headers = split /\s+/, `find /usr/include/opencv*`;
 my %cvdef; # all defines
 foreach my $header (@headers)
