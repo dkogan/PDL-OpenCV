@@ -98,7 +98,7 @@ my @headers = split /\s+/, `find /usr/include/opencv*`;
 my %cvdef; # all defines
 foreach my $header (@headers)
 {
-  next unless -e $header;
+  next unless -r $header && -f $header; # readable files
 
   importHeader($header);
 }
