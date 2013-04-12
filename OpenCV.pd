@@ -3,6 +3,7 @@
 our $VERSION = 0.06;
 use PDL::Exporter;
 use Regexp::Common;
+use IPC::Run;
 use Data::Dumper;
 
 my %PDL_CV_typemapping =
@@ -134,7 +135,7 @@ sub importHeader
     $header =~ s/\t/ /g;    # tabs to spaces
     $header =~ s/\\\n/ /mg; # convert all escaped newlines to spaces. This allows simple #define handling
 
-    %cvdef = ( %cvdef, %{ parseDefines(\$header) } );
+    %cvdef = ( %cvdef, %{ parseDefines(\$header, $file ) } );
 
     my $apire = qr{ \s*CVAPI\s*
                     \(\s*(.*?)\s*\)       # return type as CVAPI(type)
@@ -168,18 +169,94 @@ sub importHeader
 
       sub parseDefines
       {
-        my $header = shift;
+        my $header          = shift;
+        my $header_filename = shift;
 
-        my %defines;
-        while($$header =~ /^\s*# *define +(\S+) +(.*)$/mg)
+        # Here I need to go through the header, and collect all the #define
+        # values. This is a bit tricky since there could be comments,
+        # definitions built on other definitions, etc. I thus do this in two
+        # steps:
+        #   1. Parse the header myself to get a list of all the #defines
+        #   2. Run the C preprocessor to expand each of those #defines
+        return getDefines( $header_filename,
+                           getKeys( $header ) );
+
+
+
+        sub getKeys
         {
-          if(exists $defines{$1})
-          { say STDERR "$1 already defined.. Using older value"; }
-          else
-          { $defines{$1} = $2; }
+          my $header = shift;
+
+          my @keys;
+          while ($$header =~ /^ \s* \# \s* define \s+   # #define ...
+                              ([a-zA-Z0-9_]+) \s+/mgx ) # key. I do not allow '(', so NOT a macro
+          {
+            push @keys, $1;
+          }
+
+          return \@keys;
         }
 
-        return \%defines;
+        sub getDefines
+        {
+          my $header_filename = shift;
+          my $keys            = shift;
+
+          # I run the preprocessor to construct the #define values. First, I
+          # construct the input file
+          my $input = qq/#include "$header_filename"\n/;
+          my $separator = "PDL-OpenCV separator";
+          $input .= join '', map { "$separator\n$_\n" } ( @$keys );
+
+          my $output;
+          my $err;
+          IPC::Run::run( [qw( gcc -E - )], \$input, \$output, \$err)
+              or return;
+
+          # I now have the output. Each expanded token is preceded by
+          # $separator. I match these and pull out the expansions
+          my @expansions = split( "$separator\n", $output );
+          shift @expansions; # toss out the body of the #include
+
+          if( scalar @expansions != scalar @$keys )
+          {
+            die "Error parsing #defines from file '$header_filename'; mismatched token counts";
+          }
+
+          for my $i (0..$#$keys)
+          {
+            my $key   = $keys->[$i];
+            my $value = $expansions[$i];
+
+            # the value may have mathematical expressions in it, and it must be
+            # evaluateable at compile time, so I try to eval it (perl has the
+            # same basic syntax as C :) ). If the eval works, I take the result.
+            #
+            # I only allow mathematical expressions, so the only letter allowed
+            # is 'e' for scientific notation
+            next if $value =~ /[a-df-z]/i;
+            my $value_eval = eval $value;
+            storeValue( \%defines, $key, $value_eval ) if defined $value_eval;
+          }
+
+          return \%defines;
+
+
+
+          sub storeValue
+          {
+            my ( $defines, $key, $value ) = @_;
+
+            if (exists $defines->{$key})
+            {
+              print STDERR "$key already defined.. Using older value\n";
+            }
+            else
+            {
+              $defines->{ $key } = $value;
+            }
+          }
+        }
       }
 
       sub makeDocs
