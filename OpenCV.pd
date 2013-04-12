@@ -408,7 +408,7 @@ EOD
         # value, it comes first
 
         # first, construct opencv matrices for all the arguments that need this
-        foreach my $pdltype qw(B S U L F D)
+        foreach my $pdltype( qw(B S U L F D) )
         {
           $code .= "types($pdltype) \%{\n";
           foreach my $arg (@$args)
