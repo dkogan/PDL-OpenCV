@@ -287,7 +287,9 @@ EOD
                 (?:$RE{balanced}{-parens=>'()'})?  # unless they're in a nested set
                 [^(,]* )+? )                       # and followed by more no-parens, no-commas
             [,]?/gx;                               # end in a comma (or not, if it's the end)
-        @args = grep /./, @args;
+
+        # keep only non-empty arguments that aren't all (...)
+        @args = grep {/./ && !/^ *\(.*\) *$/} @args;
 
         foreach my $arg (@args)
         { $arg = parseArg($arg, $name) or return undef; }
