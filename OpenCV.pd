@@ -148,6 +148,8 @@ sub importHeader
       my $name    = $2;
       my $argstr  = $3;
 
+      say STDERR "Trying to import API function $name";
+
       if($name !~ /^cv(.*)/)
       {
         say STDERR "API function $name doesn't start with 'cv'. Skipping";
