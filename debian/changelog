@@ -1,3 +1,9 @@
+libpdl-opencv-perl (0.07-1) unstable; urgency=low
+
+  * Rebuild to support new 64-bit-index-enabled PDL
+
+ -- Dima Kogan <dima@secretsauce.net>  Thu, 14 Nov 2013 12:37:52 -0800
+
 libpdl-opencv-perl (0.06) unstable; urgency=low
 
   * added some type heuristics. A variable named ...count will be forced
