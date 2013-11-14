@@ -95,7 +95,7 @@ See http://dev.perl.org/licenses/ for more information.
 EOD
 
 
-my @headers = split /\s+/, `find /usr/include/opencv*`;
+my @headers = split /\s+/, `find /usr/include/opencv2/ -name *.h -o -name *.hpp`;
 my %cvdef; # all defines
 foreach my $header (@headers)
 {
